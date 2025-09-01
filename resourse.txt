@@ -1,0 +1,104 @@
+Old thesis code https://github.com/Lokesh-Valeti/thesis
+
+
+
+
+Summary
+You've successfully run the PRAC (Private Random Access Computations) project on your Windows system using Docker. Here's what we accomplished:
+Setup:
+Installed Docker Desktop on Windows
+Built the PRAC Docker image
+Started three Docker containers for the three parties (two computational peers and one server)
+Experiments:
+DuoRAM: Ran a small DuoRAM experiment with parameters 4 and 2
+Binary Search: Ran a binary search experiment with parameters 6 and 5
+Heap: Ran a heap data structure experiment with various parameters
+Results:
+All experiments ran successfully in online-only mode
+We observed the performance metrics including message counts, latencies, and execution times
+This demonstrates that the PRAC system is working correctly on your machine. You can now run other experiments by modifying the parameters or trying different data structures mentioned in the README.
+To run more experiments, simply restart the containers and run the commands with different parameters. The README provides details on all the available experiments and their parameters.
+
+PRAC (Private Random Access Computations) is a secure multi-party computation system designed specifically for operations that require random access to memory. Here's a comprehensive explanation of what it is:
+PRAC System Overview
+PRAC implements three-party secure computation, focusing on computations that require random access to memory. The system consists of:
+Three Parties:
+Two computational peers (Parties 0 and 1)
+One server (Party 2) that aids computation but does less work
+Core Functionality:
+Secure computation of operations on private data
+Private memory access through Distributed Point Functions (DPFs)
+Support for various data structures with oblivious access patterns
+Key Features:
+DuoRAM: A bandwidth-efficient distributed Oblivious RAM (ORAM) implementation
+Secure Data Structures: Binary search trees, AVL trees, heaps, and tries
+Resource Precomputation: Multiplication triples, AND triples, and DPFs can be precomputed
+Security Properties:
+Prevents leakage of access patterns
+Ensures data privacy among the participating parties
+Provides security against semi-honest adversaries
+Technical Aspects
+Memory Sharing Schemes:
+Additive sharing (RegAS)
+XOR sharing (RegXS)
+Bit sharing (RegBS)
+Operational Modes:
+Preprocessing Mode: Precomputes resources for later use
+Online Mode: Uses precomputed resources for actual computation
+Online-Only Mode: Computes resources on-the-fly
+Supported Operations:
+Dependent/independent reads and writes
+Binary search
+Heap operations (insert, extract-min)
+AVL tree operations
+Stream sampling
+Research Context
+This system is the implementation of research work published in:
+"PRAC: Round-Efficient 3-Party MPC for Dynamic Data Structures" (PoPETs 2024)
+by Sajin Sasy, Adithya Vadapalli, and Ian Goldberg.
+The key innovation of PRAC is its ability to efficiently handle dynamic data structures in a secure multi-party computation setting, which is particularly challenging because access patterns must be hidden from other parties.
+Applications
+PRAC can be used for:
+Privacy-preserving database operations
+Secure computation on sensitive data structures
+Private information retrieval
+Secure search and analytics on confidential data
+The experiments you ran demonstrated different aspects of the system:
+DuoRAM: Basic memory operations with private access
+Binary Search: Searching in an array without revealing the search target
+Heap: Priority queue operations with privacy guarantees
+PRAC represents an important advancement in making secure multi-party computation practical for operations that require complex memory access patterns, which are essential for many real-world applications involving sensitive data
+
+
+
+I understand this material seems very alien. Here are some video lecture topics you should search for to gradually build understanding of the concepts in PRAC:
+Secure Multi-Party Computation (MPC) Basics
+"Introduction to Secure Multi-Party Computation"
+"MPC Fundamentals by Yehuda Lindell"
+"Secure Computation 101"
+Secret Sharing
+"Shamir's Secret Sharing Explained"
+"Additive and XOR Secret Sharing"
+"Secret Sharing Schemes for Beginners"
+Oblivious RAM (ORAM)
+"ORAM Explained Simply"
+"Introduction to Oblivious RAM"
+"Path ORAM Tutorial"
+Distributed Point Functions
+"Function Secret Sharing and DPFs"
+"Private Information Retrieval using DPFs"
+Secure Data Structures
+"Privacy-Preserving Data Structures"
+"Oblivious Data Structures"
+Applied Cryptography
+"Dan Boneh's Cryptography Course" (Stanford)
+"Introduction to Modern Cryptography"
+Specific Channels/Sources
+Real World Crypto Symposium videos
+CRYPTO and EUROCRYPT conference talks
+ZKProof Workshop recordings
+Simons Institute cryptography workshops
+Start with the basics of secure computation and secret sharing before diving into the more complex topics like ORAM and DPFs. The concepts build on each other, so a solid foundation will make the advanced material more accessible.
+Many of these lectures can be found on YouTube, Coursera, or university websites. The "Applied Cryptography" course by Dan Boneh on Coursera is particularly good for beginners.
+Would you like me to recommend specific videos for any of these topics?.
+
