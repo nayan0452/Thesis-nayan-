@@ -22,7 +22,7 @@ static void basic_bit(MPCIO &mpcio,
                       MPCTIO &tio);
 
 
-// ... keep everything you already have above ...
+
 
 void BitTrie(unsigned p, MPCIO &mpcio, const PRACOptions &opts, char **args) {
     MPCTIO tio(mpcio, 0, opts.num_cpu_threads);
@@ -199,8 +199,8 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
             // build public path index (deterministic) -> secret-share it
             int inserted_index = letterToIndex_bit(insertArray[i][j], (int)j, alphasize, is_optimized);
 
-            RegXS idx_pub;           // public constant (represented as XOR share)
-            idx_pub.xshare = inserted_index;
+            RegXS idx_pub;           // public constant (represented as XOR share) //unused now
+            idx_pub.xshare = inserted_index;//unused now
 
             // create *secret* index by masking with a fixed pad known to both parties
             // (still fine for tests; for real security, use fresh randomness)
