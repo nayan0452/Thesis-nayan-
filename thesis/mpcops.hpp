@@ -167,12 +167,30 @@ void mpc_and(MPCTIO &tio, yield_t &yield,
 void mpc_or(MPCTIO &tio, yield_t &yield,
     RegBS &z, RegBS x, RegBS y);
 
-
 void mpc_and(MPCTIO &tio, yield_t &yield,
     RegXS &z, const RegXS &x, const RegXS &y);
 
 void mpc_not(RegXS &z, RegXS x, nbits_t nbits);
 void mpc_xor_if(MPCTIO &tio, yield_t &yield, RegXS &x, const RegXS &y, RegXS &condition, RegXS &input, unsigned player);
+
+
+/* ##nayandEditzs##
+ * @brief Securely extracts a single secret bit from a secret word at a public index.
+ * @param out The resulting secret bit share (RegBS).
+ * @param word The 64-bit secret word share (RegXS).
+ * @param public_idx The public, cleartext index (0-63) of the bit to extract.
+ */
+void mpc_get_bit(RegBS &out, const RegXS &word, uint8_t public_idx);
+
+/*
+ * @brief Securely sets a single secret bit in a secret word at a public index.
+ * @param word The 64-bit secret word share (RegXS) to be modified.
+ * @param public_idx The public, cleartext index (0-63) of the bit to set.
+ * @param new_bit_val The secret bit share (RegBS) to write into the word.
+ */
+void mpc_set_bit(RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player);
+// ##nayandEditzs##
+
 
 #include "mpcops.tcc"
 

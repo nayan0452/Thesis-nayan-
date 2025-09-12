@@ -8,6 +8,7 @@
 #include "options.hpp"
 #include "mpcops.hpp"
 #include "duoram.hpp"
+#include "mpcops.hpp" // For mpc_set_bit
 
 class BitTrieClass {
 public:
@@ -28,7 +29,7 @@ public:
 
     // Bit ops (now 1 slot == 1 bit)
     void set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player);
-    RegXS get_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position);
+    RegXS get_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player);
 
     // Trie ops
     void insert(MPCTIO &tio, yield_t &yield, RegXS index, RegXS &insert_value, unsigned player);

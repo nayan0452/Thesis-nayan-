@@ -505,6 +505,44 @@ void mpc_not(RegXS &z, RegXS x, nbits_t nbits) {
 }
 
 
+// Add these new function definitions at the end of the file.##nayandEditzs##
+
+void mpc_public_shift_right(RegXS &z, const RegXS &x, uint8_t amount) {
+    // For XOR sharing, a public shift is just a local shift on each share.
+    z.xshare = x.xshare >> amount;
+}
+
+void mpc_get_bit(RegBS &out, const RegXS &word, uint8_t public_idx) {
+    // 1. Shift the word right by the public index
+    RegXS shifted_word;
+    mpc_public_shift_right(shifted_word, word, public_idx);
+
+    // 2. The LSB of the shifted word is now our desired bit.
+    // We can extract this locally from each share.
+    out.bshare = (shifted_word.xshare & 1);
+}
+
+void mpc_set_bit(RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player) {
+    // 1. Create a public mask to clear the target bit (e.g., ...1110111...)
+    value_t clear_mask = ~(1ULL << public_idx);
+    
+    // 2. Create a secret-shared value representing the new bit at its correct position.
+    // This is done using a trivial sharing where only one player holds the value.
+    RegXS bit_val_shifted;
+    if (player == 0) {
+        bit_val_shifted.xshare = (value_t)new_bit_val.bshare << public_idx;
+    } else {
+        bit_val_shifted.xshare = 0;
+    }
+
+    // 3. Clear the bit in the original word by ANDing with the public mask (local op)
+    word.xshare &= clear_mask;
+
+    // 4. Set the new bit by XORing our new value (local op)
+    word.xshare ^= bit_val_shifted.xshare;
+}
+//##nayandEditzs##
+
 // void mpc_bitwise_not(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, nbits_t nbits) {
 //     const value_t mask = MASKBITS(static_cast<size_t>(nbits));
 

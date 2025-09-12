@@ -10,6 +10,11 @@
 #include <string>
 #include <cstdlib>
 
+#include "mpcops.hpp" 
+
+// Defining this constant for clarity
+const uint64_t BITS_PER_WORD = 64;
+
 // Forward declaration so BitTrie(...) can call it
 static void basic_bit(MPCIO &mpcio,
                       yield_t &yield,
@@ -74,17 +79,56 @@ void BitTrieClass::init(MPCTIO &tio, yield_t &yield, size_t n) {
 // ---- Per-bit set/get (1 slot == 1 bit) ----
 void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player) {
     auto BitArray = bit_oram.flat(tio, yield);
+    
+    // --- THIS IS THE BIGGEST CHALLENGE ---
+    // The bit_position is a secret share. Doing math on it requires
+    // advanced MPC protocols (like secret bit-shifts) that don't exist
+    // in the codebase. For a first implementation, we are insecurely
+    // reconstructing it to proceed.
+    value_t public_pos = mpc_reconstruct(tio, yield, bit_position, 64);
+    
+    // Calculate which word and which bit in the word we need
+    RegXS word_idx; 
+    word_idx.xshare = (player == 0) ? (public_pos / BITS_PER_WORD) : 0;
+    uint8_t bit_in_word_idx = public_pos % BITS_PER_WORD;
 
-    // public-1 encoded as XOR share: P0 holds 1, others hold 0
-    RegXS one; one.xshare = (player == 0) ? 1 : 0;
+    // --- READ-MODIFY-WRITE CYCLE ---
+    // 1. Read the entire 64-bit word from ORAM
+    RegXS old_word = BitArray[word_idx];
+    
+    // 2. Create the secret share for the new bit value (1)
+    RegBS one_bs; one_bs.bshare = (player == 0);
+    
+    // 3. Use a new MPC helper to modify the word (you must implement this)
+    mpc_set_bit(old_word, bit_in_word_idx, one_bs, player);
 
-    // Just write 1 at secret index (ORAM takes care of obliviousness)
-    BitArray[bit_position] = one;
+    // 4. Write the modified 64-bit word back to ORAM
+    BitArray[word_idx] = old_word;
 }
 
-RegXS BitTrieClass::get_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position) {
+RegXS BitTrieClass::get_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player) {
     auto BitArray = bit_oram.flat(tio, yield);
-    return BitArray[bit_position]; // returns a RegXS share (0/1)
+    
+    // Insecurely reconstruct for now
+    value_t public_pos = mpc_reconstruct(tio, yield, bit_position, 64);
+
+    // Calculate which word and which bit in the word we need
+    RegXS word_idx;
+    
+    word_idx.xshare = (player == 0) ? (public_pos / BITS_PER_WORD) : 0;
+    uint8_t bit_in_word_idx = public_pos % BITS_PER_WORD;
+
+    // 1. Read the 64-bit word
+    RegXS word = BitArray[word_idx];
+
+    // 2. Extract the secret bit using a new MPC helper (you must implement this)
+    RegBS result_bs;
+    mpc_get_bit(result_bs, word, bit_in_word_idx);
+    
+    // 3. Convert the result back to RegXS for the return type
+    RegXS result_xs;
+    result_xs.xshare = result_bs.bshare;
+    return result_xs;
 }
 
 // ---- Trie insert/search ----
@@ -94,9 +138,9 @@ void BitTrieClass::insert(MPCTIO &tio, yield_t &yield, RegXS index, RegXS & /*in
     set_bit(tio, yield, index, player);
 }
 
-void BitTrieClass::search(MPCTIO &tio, yield_t &yield, RegXS index, RegBS &Z, unsigned /*player*/) {
+void BitTrieClass::search(MPCTIO &tio, yield_t &yield, RegXS index, RegBS &Z, unsigned player) {
     // Z := Z AND (bit_at_index == 1)
-    RegXS bitv = get_bit(tio, yield, index);    // 0/1 in XOR share
+    RegXS bitv = get_bit(tio, yield, index, player);    // 0/1 in XOR share
     RegBS bval = bitv.bitat(0);                 // safe: value is 0/1, bit 0 equals the value
     RegBS tmp;
     mpc_and(tio, yield, tmp, Z, bval);
@@ -109,7 +153,7 @@ void BitTrieClass::print_bittrie(MPCTIO &tio, yield_t &yield, size_t size) {
     auto R = BitArray.reconstruct();
     if (R.empty()) return; // P1/P2 get empty
     for (size_t i = 0; i < size; ++i) {
-        uint64_t v = R[i].share() & 1ULL;
+        uint64_t v = R[i].share();
         std::cout << i << "->" << v << "   ";
     }
 }
@@ -175,7 +219,14 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
                unsigned player, MPCTIO &tio)
 {
     // total slots = total trie nodes (one bit per node)
-    size_t size = sumOfPowers_bit(alphasize, triedepth) + 1;
+    // BEFORE
+    // size_t size = sumOfPowers_bit(alphasize, triedepth) + 1;
+
+    // AFTER
+    size_t nbits = sumOfPowers_bit(alphasize, triedepth) + 1;
+    size_t size = (nbits + 63) / 64; // Calculate number of 64-bit words, this change ensures your ORAMs are now 1/64th of their original size.
+
+    std::cout << "BitTrie size: " << nbits << " bits in " << size << " words\n";
     std::cout << "BitTrie size: " << size << " bits\n";
 
     BitTrieClass tree(tio.player(), size);
