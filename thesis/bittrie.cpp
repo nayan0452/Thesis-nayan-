@@ -76,60 +76,91 @@ void BitTrieClass::init(MPCTIO &tio, yield_t &yield, size_t n) {
     StringArray.init([](size_t){ return RegXS{}; }); // 0
 }
 
-// ---- Per-bit set/get (1 slot == 1 bit) ----
+// ---- Per-bit set/get (1 slot == 1 bit) ----#including secure mpc computations
 void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player) {
     auto BitArray = bit_oram.flat(tio, yield);
-    
-    // --- THIS IS THE BIGGEST CHALLENGE ---
-    // The bit_position is a secret share. Doing math on it requires
-    // advanced MPC protocols (like secret bit-shifts) that don't exist
-    // in the codebase. For a first implementation, we are insecurely
-    // reconstructing it to proceed.
-    value_t public_pos = mpc_reconstruct(tio, yield, bit_position, 64);
-    
-    // Calculate which word and which bit in the word we need
-    RegXS word_idx; 
-    word_idx.xshare = (player == 0) ? (public_pos / BITS_PER_WORD) : 0;
-    uint8_t bit_in_word_idx = public_pos % BITS_PER_WORD;
 
-    // --- READ-MODIFY-WRITE CYCLE ---
-    // 1. Read the entire 64-bit word from ORAM
+    // --- DEBUG: Reconstruct the secret bit_position we want to set ---
+    if (player == 0) {
+        value_t public_bit_pos = mpc_reconstruct(tio, yield, bit_position, 32);
+        std::cout << "\n[DEBUG] SETTING bit_position: " << public_bit_pos << std::endl;
+    } else {
+        mpc_reconstruct(tio, yield, bit_position, 32); // P1 must participate
+    }
+
+    // --- 1. SECURELY GET THE WORD INDEX ---
+    RegXS word_idx;
+    mpc_secret_shift_right(word_idx, bit_position, 6);
+
+    // --- 2. OBLIVIOUSLY READ THE OLD WORD ---
     RegXS old_word = BitArray[word_idx];
     
-    // 2. Create the secret share for the new bit value (1)
-    RegBS one_bs; one_bs.bshare = (player == 0);
-    
-    // 3. Use a new MPC helper to modify the word (you must implement this)
-    mpc_set_bit(old_word, bit_in_word_idx, one_bs, player);
+    // --- DEBUG: Reconstruct values to see what's happening ---
+    if (player == 0) {
+        value_t public_word_idx = mpc_reconstruct(tio, yield, word_idx, 32);
+        value_t public_old_word = mpc_reconstruct(tio, yield, old_word, 64);
+        std::cout << "[DEBUG]   Reading from word_idx: " << public_word_idx << std::endl;
+        std::cout << "[DEBUG]   Value of old_word: " << public_old_word << std::endl;
+    } else {
+        mpc_reconstruct(tio, yield, word_idx, 32); // P1 must participate
+        mpc_reconstruct(tio, yield, old_word, 64); // P1 must participate
+    }
 
-    // 4. Write the modified 64-bit word back to ORAM
-    BitArray[word_idx] = old_word;
+    // --- 3. HYBRID STEP: Reconstruct ONLY the bit index (0-63) ---
+    RegXS bit_in_word_idx_xs;
+    mpc_and_public(tio, yield, bit_in_word_idx_xs, bit_position, 63, player);
+    uint8_t public_bit_idx = mpc_reconstruct(tio, yield, bit_in_word_idx_xs, 6);
+    
+    if (player == 0) {
+        std::cout << "[DEBUG]   Calculated public_bit_idx (0-63): " << (int)public_bit_idx << std::endl;
+    }
+
+    // Create a secret share for the value '1'
+    RegBS one_bs;
+    one_bs.bshare = (player == 0);
+
+    // --- 4. USE HELPER TO MODIFY THE WORD ---
+    RegXS new_word = old_word;
+    mpc_set_bit(tio, yield, new_word, public_bit_idx, one_bs, player); // Calling the FIXED function // Calling the BROKEN function
+
+    // --- DEBUG: Reconstruct the new word to check the result ---
+    if (player == 0) {
+        value_t public_new_word = mpc_reconstruct(tio, yield, new_word, 64);
+        std::cout << "[DEBUG]   Value of new_word after set: " << public_new_word << std::endl;
+    } else {
+        mpc_reconstruct(tio, yield, new_word, 64); // P1 must participate
+    }
+
+    // --- 5. CRITICAL STEP: WRITE THE MODIFIED WORD BACK ---
+    BitArray[word_idx] = new_word;
 }
+
 
 RegXS BitTrieClass::get_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsigned player) {
     auto BitArray = bit_oram.flat(tio, yield);
-    
-    // Insecurely reconstruct for now
-    value_t public_pos = mpc_reconstruct(tio, yield, bit_position, 64);
 
-    // Calculate which word and which bit in the word we need
+    // --- 1. SECURELY GET THE WORD INDEX ---
     RegXS word_idx;
-    
-    word_idx.xshare = (player == 0) ? (public_pos / BITS_PER_WORD) : 0;
-    uint8_t bit_in_word_idx = public_pos % BITS_PER_WORD;
+    mpc_secret_shift_right(word_idx, bit_position, 6); // Securely calculate word index
 
-    // 1. Read the 64-bit word
+    // --- 2. OBLIVIOUSLY READ THE WORD ---
     RegXS word = BitArray[word_idx];
-
-    // 2. Extract the secret bit using a new MPC helper (you must implement this)
-    RegBS result_bs;
-    mpc_get_bit(result_bs, word, bit_in_word_idx);
     
-    // 3. Convert the result back to RegXS for the return type
+    // --- 3. HYBRID STEP: Reconstruct ONLY the bit index (0-63) ---
+    RegXS bit_in_word_idx_xs;
+    mpc_and_public(tio, yield, bit_in_word_idx_xs, bit_position, 63, player);
+    // This reconstruction is much less risky as it only reveals 6 bits of info
+    uint8_t public_bit_idx = mpc_reconstruct(tio, yield, bit_in_word_idx_xs, 6);
+
+    // --- 4. USE HELPER WITH THE NOW-PUBLIC BIT INDEX ---
+    RegBS result_bs;
+    mpc_get_bit(result_bs, word, public_bit_idx);
+
     RegXS result_xs;
     result_xs.xshare = result_bs.bshare;
     return result_xs;
 }
+
 
 // ---- Trie insert/search ----
 void BitTrieClass::insert(MPCTIO &tio, yield_t &yield, RegXS index, RegXS & /*insert_value*/, unsigned player) {
@@ -163,7 +194,7 @@ void BitTrieClass::print_bittrie_stringcheck(MPCTIO &tio, yield_t &yield, size_t
     auto R = StringArray.reconstruct();
     if (R.empty()) return;
     for (size_t i = 0; i < size; ++i) {
-        std::cout << i << "->" << (R[i].share() & 1ULL) << "   ";
+        std::cout << i << "->" << (R[i].share()) << "   ";
     }
 }
 
@@ -192,7 +223,7 @@ static size_t geom_sum_levels(size_t n, size_t m) {
 #define BITTRIE_VERBOSE
 static int preIndex_bit[10];
 
-static int letterToIndex_bit(char x, int pos, int alphasize, int is_optimized) {
+static int letterToIndex_bit(char x, int pos, int alphasize, int is_optimized, int preIndex_bit[]) {
     int ch = (is_optimized == 1) ? (x - 'a') : (x - 'a' + 1);
     if (pos == 0) {
         preIndex_bit[pos] = ch;
@@ -214,23 +245,19 @@ static size_t Power_bit(size_t x, size_t y) {
     return ipow(x, y+1);
 }
 
+// In thesis/bittrie.cpp -- THE FULLY CORRECTED basic_bit function
+
 void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
                size_t n_inserts, size_t n_searches, int is_optimized,
                unsigned player, MPCTIO &tio)
 {
-    // total slots = total trie nodes (one bit per node)
-    // BEFORE
-    // size_t size = sumOfPowers_bit(alphasize, triedepth) + 1;
-
-    // AFTER
     size_t nbits = sumOfPowers_bit(alphasize, triedepth) + 1;
-    size_t size = (nbits + 63) / 64; // Calculate number of 64-bit words, this change ensures your ORAMs are now 1/64th of their original size.
-
+    size_t size = (nbits + 63) / 64;
     std::cout << "BitTrie size: " << nbits << " bits in " << size << " words\n";
-    std::cout << "BitTrie size: " << size << " bits\n";
 
     BitTrieClass tree(tio.player(), size);
     tree.init(tio, yield, size);
+
 #ifdef BITTRIE_VERBOSE
     tree.print_bittrie(tio, yield, size);
     std::cout << "\n===== BitTrie Init Stats =====\n";
@@ -245,34 +272,31 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
 
     // ---------- INSERT ----------
     for (size_t i = 0; i < n_inserts; i++) {
-        RegXS share;  // secret index share
+        RegXS share;
+        int preIndex_bit[10] = {0}; // Create a fresh array for each string
+
         for (size_t j = 0; j < insertArray[i].length(); j++) {
-            // build public path index (deterministic) -> secret-share it
-            int inserted_index = letterToIndex_bit(insertArray[i][j], (int)j, alphasize, is_optimized);
-
-            RegXS idx_pub;           // public constant (represented as XOR share) //unused now
-            idx_pub.xshare = inserted_index;//unused now
-
-            // create *secret* index by masking with a fixed pad known to both parties
-            // (still fine for tests; for real security, use fresh randomness)
-            // NEW: public index encoded as XOR share
+            // Pass the array to the function
+            int inserted_index = letterToIndex_bit(insertArray[i][j], (int)j, alphasize, is_optimized, preIndex_bit);
             share.xshare = (player == 0) ? inserted_index : 0;
-
-
-            // Set the bit at this node
-            RegXS dummy; dummy.xshare = 1; // unused now (kept to match signature)
+            RegXS dummy;
             tree.insert(tio, yield, share, dummy, player);
-
-            if (is_optimized == 1) {
-                tree.print_bittrie(tio, yield, size);
-                std::cout << "\n";
-            }
         }
 
-        // mark end-of-string in second_oram at the *last* node index
+        // --- CORRECTED End-of-String MARKER ---
+        // (This part was already correct from the last fix)
         auto End_String = tree.second_oram.flat(tio, yield);
-        RegXS one; one.xshare = (player == 0) ? 1 : 0;
-        End_String[share] = one;
+        RegXS word_idx_eos;
+        mpc_secret_shift_right(word_idx_eos, share, 6);
+        RegXS old_word_eos = End_String[word_idx_eos];
+        RegXS bit_in_word_idx_xs;
+        mpc_and_public(tio, yield, bit_in_word_idx_xs, share, 63, player);
+        uint8_t public_bit_idx_eos = mpc_reconstruct(tio, yield, bit_in_word_idx_xs, 6);
+        RegBS one_bs_eos; one_bs_eos.bshare = (player == 0);
+        RegXS new_word_eos = old_word_eos;
+        mpc_set_bit(tio, yield, new_word_eos, public_bit_idx_eos, one_bs_eos, player);
+        End_String[word_idx_eos] = new_word_eos;
+
 
         std::cout << "\ninserted value is " << insertArray[i] << std::endl;
 #ifdef BITTRIE_VERBOSE
@@ -289,47 +313,42 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
     mpcio.reset_stats();
     tio.reset_lamport();
 
-#ifdef BITTRIE_VERBOSE
-    tree.print_bittrie(tio, yield, size);
-    std::cout << "\n";
-#endif
-
     // ---------- SEARCH ----------
     for (size_t i = 0; i < n_searches; i++) {
-        // Z := public-true encoded as XOR boolean share (P0=1, others=0)
         RegBS Z; Z.bshare = (player == 0);
-
         RegXS share;
+        int preIndex_bit[10] = {0}; // Create a fresh array for each search
+
         for (size_t j = 0; j < searchArray[i].length(); j++) {
-            int inserted_index = letterToIndex_bit(searchArray[i][j], (int)j, alphasize, is_optimized);
-
-            RegXS idx_pub; idx_pub.xshare = inserted_index;
-
-            // rebuild secret index with same pad convention (matches insert)
-            // NEW: same public index sharing as insert
+            // Pass the array to the function
+            int inserted_index = letterToIndex_bit(searchArray[i][j], (int)j, alphasize, is_optimized, preIndex_bit);
             share.xshare = (player == 0) ? inserted_index : 0;
-
-
-            // Accumulate path constraint: Z &= bit[share]
             tree.search(tio, yield, share, Z, player);
         }
-
-        // Also require end-of-string marker at final node
+        
+        // --- CORRECTED End-of-String CHECK ---
+        // (This part was also correct from the last fix)
         auto End_String = tree.second_oram.flat(tio, yield);
-        RegXS check = End_String[share];   // 0/1 RegXS
-        RegBS end = check.bitat(0);        // convert to RegBS
+        RegXS word_idx_eos;
+        mpc_secret_shift_right(word_idx_eos, share, 6);
+        RegXS word_eos = End_String[word_idx_eos];
+        RegXS bit_in_word_idx_xs;
+        mpc_and_public(tio, yield, bit_in_word_idx_xs, share, 63, player);
+        uint8_t public_bit_idx_eos = mpc_reconstruct(tio, yield, bit_in_word_idx_xs, 6);
+        RegBS end_bit;
+        mpc_get_bit(end_bit, word_eos, public_bit_idx_eos);
         RegBS value;
-        mpc_and(tio, yield, value, Z, end);
+        mpc_and(tio, yield, value, Z, end_bit);
         Z = value;
 
-        bool z_final = mpc_reconstruct(tio, yield, Z);  // <- reconstruct the boolean share
+
+        bool z_final = mpc_reconstruct(tio, yield, Z);
         if (player == 0) {
             if (z_final)
                 std::cout << "\nThe value " << searchArray[i] << " is present" << std::endl;
             else
-            std::cout << "\nThe value " << searchArray[i] << " is not present" << std::endl;
-}
-
+                std::cout << "\nThe value " << searchArray[i] << " is not present" << std::endl;
+        }
     }
 
     std::cout << "\n===== BitTrie Search Stats =====\n";

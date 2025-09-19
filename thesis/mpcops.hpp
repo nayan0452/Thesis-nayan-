@@ -175,20 +175,39 @@ void mpc_xor_if(MPCTIO &tio, yield_t &yield, RegXS &x, const RegXS &y, RegXS &co
 
 
 /* ##nayandEditzs##
- * @brief Securely extracts a single secret bit from a secret word at a public index.
- * @param out The resulting secret bit share (RegBS).
- * @param word The 64-bit secret word share (RegXS).
- * @param public_idx The public, cleartext index (0-63) of the bit to extract.
+   @brief Securely extracts a single secret bit from a secret word at a public index.
+   @param out The resulting secret bit share (RegBS).
+   @param word The 64-bit secret word share (RegXS).
+   @param public_idx The public, cleartext index (0-63) of the bit to extract.
  */
 void mpc_get_bit(RegBS &out, const RegXS &word, uint8_t public_idx);
 
 /*
- * @brief Securely sets a single secret bit in a secret word at a public index.
- * @param word The 64-bit secret word share (RegXS) to be modified.
- * @param public_idx The public, cleartext index (0-63) of the bit to set.
- * @param new_bit_val The secret bit share (RegBS) to write into the word.
+  @brief Securely sets a single secret bit in a secret word at a public index.
+  @param word The 64-bit secret word share (RegXS) to be modified.
+  @param public_idx The public, cleartext index (0-63) of the bit to set.
+  @param new_bit_val The secret bit share (RegBS) to write into the word.
  */
-void mpc_set_bit(RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player);
+void mpc_set_bit(MPCTIO &tio, yield_t &yield, RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player);
+
+/*
+  @brief Securely shifts a secret-shared value right by a public amount.
+  @param z The output secret-shared RegXS.
+  @param x The input secret-shared RegXS.
+  @param amount The public, cleartext number of bits to shift.
+ */
+void mpc_secret_shift_right(RegXS &z, const RegXS &x, uint8_t amount);
+
+/*
+  @brief Securely shifts a secret-shared value left by a public amount.
+  @param z The output secret-shared RegXS.
+  @param x The input secret-shared RegXS.
+  @param amount The public, cleartext number of bits to shift.
+ */
+void mpc_secret_shift_left(RegXS &z, const RegXS &x, uint8_t amount);
+
+void mpc_and_public(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, value_t public_mask, unsigned player);
+
 // ##nayandEditzs##
 
 

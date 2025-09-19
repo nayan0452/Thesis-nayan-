@@ -433,27 +433,28 @@ void mpc_or(MPCTIO &tio, yield_t &yield,
 // consumes 1 AndTriple
 void mpc_and(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, const RegXS &y)
 {
-    // Fetch an AND triple (A, B, C) such that A & B = C
+    // Fetch an AND triple (A, B, C) such that (A_i & B_i) = C_i for each bit i
     auto [A, B, C] = tio.andtriple(yield);
 
-    // Compute blinded values
+    // Compute blinded values by XORing with the triple shares
     value_t blind_x = x.xshare ^ A;
     value_t blind_y = y.xshare ^ B;
 
-    // Send blinded values to the peer
-    uint8_t v = (blind_x << 1) | blind_y;
-    tio.queue_peer(&v, sizeof(v));
+    // Send the FULL blinded 64-bit values to the peer
+    tio.queue_peer(&blind_x, sizeof(blind_x));
+    tio.queue_peer(&blind_y, sizeof(blind_y));
 
     yield();
 
-    // Receive the peer's blinded values
-    uint8_t peer_v = 0;
-    tio.recv_peer(&peer_v, sizeof(peer_v));
-    value_t peer_blind_x = (peer_v >> 1) & 1;
-    value_t peer_blind_y = peer_v & 1;
+    // Receive the peer's FULL blinded 64-bit values
+    value_t peer_blind_x = 0;
+    value_t peer_blind_y = 0;
+    tio.recv_peer(&peer_blind_x, sizeof(peer_blind_x));
+    tio.recv_peer(&peer_blind_y, sizeof(peer_blind_y));
 
-    // Compute the output share
-    z.xshare = (x.xshare & peer_blind_y) ^ (y.xshare & peer_blind_x) ^ (x.xshare & y.xshare) ^ C;
+    // Beaver's method for AND: z_i = (x_i & y_j) ^ (x_j & y_i) ^ (x_i & y_i) ^ c_i
+    // Since we are P0, the peer is P1 (j=1). Our share is x0, y0.
+    z.xshare = (x.xshare & y.xshare) ^ (x.xshare & peer_blind_y) ^ (y.xshare & peer_blind_x) ^ C;
 }
 
 
@@ -505,7 +506,7 @@ void mpc_not(RegXS &z, RegXS x, nbits_t nbits) {
 }
 
 
-// Add these new function definitions at the end of the file.##nayandEditzs##
+//##nayandEditzs##
 
 void mpc_public_shift_right(RegXS &z, const RegXS &x, uint8_t amount) {
     // For XOR sharing, a public shift is just a local shift on each share.
@@ -522,25 +523,57 @@ void mpc_get_bit(RegBS &out, const RegXS &word, uint8_t public_idx) {
     out.bshare = (shifted_word.xshare & 1);
 }
 
-void mpc_set_bit(RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player) {
-    // 1. Create a public mask to clear the target bit (e.g., ...1110111...)
-    value_t clear_mask = ~(1ULL << public_idx);
-    
-    // 2. Create a secret-shared value representing the new bit at its correct position.
-    // This is done using a trivial sharing where only one player holds the value.
-    RegXS bit_val_shifted;
-    if (player == 0) {
-        bit_val_shifted.xshare = (value_t)new_bit_val.bshare << public_idx;
-    } else {
-        bit_val_shifted.xshare = 0;
+void mpc_set_bit(MPCTIO &tio, yield_t &yield, RegXS &word, uint8_t public_idx, const RegBS &new_bit_val, unsigned player) {
+    // 1. Extract the current bit at the target position from the word.
+    RegBS old_bit;
+    mpc_get_bit(old_bit, word, public_idx);
+
+    // 2. Calculate if the bit needs to be flipped.
+    // (old_bit XOR new_bit_val) will be 1 if they are different, 0 otherwise.
+    RegBS delta_bit;
+    delta_bit.bshare = old_bit.bshare ^ new_bit_val.bshare;
+
+    // 3. SECURELY RECONSTRUCT the 1-bit result. This is the crucial step.
+    // It requires communication but ensures both parties agree on the action.
+    bool needs_flip = mpc_reconstruct(tio, yield, delta_bit);
+
+    // 4. Both parties now know the public outcome and create the mask locally.
+    value_t mask = 0;
+    if (needs_flip) {
+        mask = (value_t)1 << public_idx;
     }
 
-    // 3. Clear the bit in the original word by ANDing with the public mask (local op)
-    word.xshare &= clear_mask;
+    // 5. Secret-share the mask. P0 holds the value, P1 holds 0.
+    RegXS delta_word;
+    if (player == 0) {
+        delta_word.xshare = mask;
+    } else {
+        delta_word.xshare = 0;
+    }
 
-    // 4. Set the new bit by XORing our new value (local op)
-    word.xshare ^= bit_val_shifted.xshare;
+    // 6. Apply the correctly shared mask to the original word.
+    word.xshare ^= delta_word.xshare;
 }
+void mpc_and_public(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, value_t public_mask, unsigned player) {
+    // Represent the public mask as a secret share where P0 holds the whole value
+    RegXS y_mask;
+    y_mask.xshare = (player == 0) ? public_mask : 0;
+
+    // Call the existing MPC protocol for ANDing two secret values
+    mpc_and(tio, yield, z, x, y_mask);
+}
+void mpc_secret_shift_right(RegXS &z, const RegXS &x, uint8_t amount) {
+    // A public shift on an XOR-shared value is just a local shift on each share.
+    //similar function as mpc_public_shift_right above (kept for defination matching)
+    z.xshare = x.xshare >> amount;
+}
+
+void mpc_secret_shift_left(RegXS &z, const RegXS &x, uint8_t amount) {
+    // A public shift on an XOR-shared value is just a local shift on each share.
+    z.xshare = x.xshare << amount;
+}
+
+
 //##nayandEditzs##
 
 // void mpc_bitwise_not(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, nbits_t nbits) {
