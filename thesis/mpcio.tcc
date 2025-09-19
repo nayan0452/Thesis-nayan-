@@ -86,7 +86,7 @@ RDPFTriple<WIDTH> MPCTIO::rdpftriple(yield_t &yield, nbits_t depth,
     return val;
 }
 
-// Only the server calls this; the computational peers should be calling
+// Only the server calls this; the computational peers should be calling .
 // rdpftriple() at the same time
 template <nbits_t WIDTH>
 RDPFPair<WIDTH> MPCTIO::rdpfpair(yield_t &yield, nbits_t depth,
