@@ -454,7 +454,7 @@ void mpc_and(MPCTIO &tio, yield_t &yield, RegXS &z, const RegXS &x, const RegXS 
 
     // Beaver's method for AND: z_i = (x_i & y_j) ^ (x_j & y_i) ^ (x_i & y_i) ^ c_i
     // Since we are P0, the peer is P1 (j=1). Our share is x0, y0.
-    z.xshare = (x.xshare & y.xshare) ^ (x.xshare & peer_blind_y) ^ (y.xshare & peer_blind_x) ^ C;
+    z.xshare = (x.xshare & y.xshare) ^ (x.xshare & peer_blind_y) ^ (B & peer_blind_x) ^ C;
 }
 
 
