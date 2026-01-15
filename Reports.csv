@@ -1,0 +1,4 @@
+i,e,alpha,depth,opt,insert_msgs,insert_bytes,insert_lamport,insert_aes,insert_wall_ms,insert_mem_kib,search_msgs,search_bytes,search_lamport,search_aes,search_wall_ms,search_mem_kib,outcome
+5,5,4,4,0,560,18560,510,1680,2909,11604,265,8865,246,840,1815,11604,success
+500,500,4,4,0,,,,,,,,,,,,timed_out_180s
+5000,5000,4,4,0,,,,,,,,,,,,skipped_after_timeout_at_500

@@ -1,0 +1,13 @@
+A: -m 4 -d 3 -i 3 -e 3 -opt 0
+B: -m 4 -d 4 -i 5 -e 5 -opt 0
+C: -m 4 -d 4 -i 5 -e 5 -opt 1
+
+Insert phase:
+A: msgs 240, bytes 5,400, lamport 210, AES 144, wall 1.917s, mem ~11.3 MiB
+B: msgs 560, bytes 18,560, lamport 510, AES 1,680, wall 2.780s, mem ~11.5 MiB
+C: msgs 560, bytes 18,560, lamport 510, AES 1,680, wall 2.853s, mem ~11.7 MiB
+
+Search phase:
+A: msgs 111, bytes 2,451, lamport 100, AES 72, wall 1.009s, mem ~11.3 MiB
+B: msgs 265, bytes 8,865, lamport 246, AES 840, wall 1.707s, mem ~11.5 MiB
+C: msgs 265, bytes 8,865, lamport 246, AES 840, wall 1.655s, mem ~11.8 MiB
