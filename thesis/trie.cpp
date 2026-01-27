@@ -170,15 +170,18 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
 
         std::string insertArray[] = {"dad","aab","aca","daa","dca"};
         std::string searchArray[] = {"ddd","aab","aca","daa","dca"};
+        const size_t insertCount = sizeof(insertArray) / sizeof(insertArray[0]);
+        const size_t searchCount = sizeof(searchArray) / sizeof(searchArray[0]);
         for(size_t i=0;i<n_inserts;i++){
             
             RegXS share;
-            for(size_t j = 0; j < insertArray[i].length() ; j++){
+            const std::string &word = insertArray[i % insertCount];
+            for(size_t j = 0; j < word.length() ; j++){
                 
                 RegXS insert_value;
                 insert_value.xshare = 1;
                 share.xshare = 1000;
-                size_t inserted_index =  letterToIndex(insertArray[i][j],j,alphasize,is_optimized);
+                size_t inserted_index =  letterToIndex(word[j],j,alphasize,is_optimized);
                 RegXS i_index;
                 i_index.xshare = inserted_index;
 
@@ -203,7 +206,7 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
 
             //std::cout<<"  ----- "<< mpc_reconstruct(tio, yield,End_String[share])<<"  ------ ";
 
-            std::cout << "\ninserted value is " << insertArray[i] << std::endl;
+            std::cout << "\ninserted value is " << word << std::endl;
             tree.print_trie(tio, yield,size);
             std::cout<<"\n";
             std::cout<<"String presence array \n";
@@ -226,6 +229,7 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
         tree.print_trie(tio,yield,size);
         std::cout<<"\n";
         for(size_t i = 0 ; i< n_searches; i++){
+            const std::string &word = searchArray[i % searchCount];
             RegBS Z;
             if(player==0){
                 Z.bshare=false;
@@ -235,16 +239,16 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
             }
             //std::cout<<mpc_reconstruct(tio,yield,Z)<< "  "<<  Z.bshare<<"    ";
             RegXS share;
-            for(size_t j = 0;j<searchArray[i].length();j++){
+            for(size_t j = 0;j<word.length();j++){
                 
                 
                 share.xshare = 2000;
 
-                size_t inserted_index =  letterToIndex(searchArray[i][j],j,alphasize,is_optimized);
+                size_t inserted_index =  letterToIndex(word[j],j,alphasize,is_optimized);
 
 
     
-                inserted_index = letterToIndex(searchArray[i][j],j,alphasize,is_optimized);
+                inserted_index = letterToIndex(word[j],j,alphasize,is_optimized);
                 RegXS i_index;
                 i_index.xshare = inserted_index;
                 
@@ -275,9 +279,9 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
 
         //mpc_reconstruct(tio,yield,Z,64);
         if(mpc_reconstruct(tio,yield,Z))
-        std::cout << "\nThe value  " << searchArray[i] << " is present" << std::endl;
+        std::cout << "\nThe value  " << word << " is present" << std::endl;
         else
-        std::cout << "\nthe value " << searchArray[i] << " is not present" << std::endl;
+        std::cout << "\nthe value " << word << " is not present" << std::endl;
        }
 
     
@@ -299,18 +303,21 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
 
         std::string insertArray[] = {"dad","aab","aca","daa","dca"};
         std::string searchArray[] = {"ddd","aab","aca","daa","dca"};
+        const size_t insertCount = sizeof(insertArray) / sizeof(insertArray[0]);
+        const size_t searchCount = sizeof(searchArray) / sizeof(searchArray[0]);
 
         for(size_t i=0;i<n_inserts;i++){
             RegXS share;
             size_t j = 0; 
-            for(; j < insertArray[i].length() ; j++){
+            const std::string &word = insertArray[i % insertCount];
+            for(; j < word.length() ; j++){
 
                 size_t size  = Power(alphasize,j);
                 
                 RegXS insert_value;
                 insert_value.xshare = 1;
                 share.xshare = 1000;
-                size_t inserted_index =  letterToIndex(insertArray[i][j],j,alphasize,is_optimized);
+                size_t inserted_index =  letterToIndex(word[j],j,alphasize,is_optimized);
                 RegXS i_index;
                 i_index.xshare = inserted_index;
 
@@ -331,12 +338,13 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
             auto End_String = trieArray[j-1]->second_oram.flat(tio, yield);
             End_String[share] = check;
 
-            std::cout << "inserted value is " << insertArray[i] << std::endl;
+            std::cout << "inserted value is " << word << std::endl;
             
             
         }
 
         for(size_t i = 0 ; i< n_searches; i++){
+            const std::string &word = searchArray[i % searchCount];
             RegBS Z;
             if(player==0){
                 Z.bshare=false;
@@ -347,16 +355,16 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
             size_t j = 0;
             RegXS share;
             //std::cout<<mpc_reconstruct(tio,yield,Z)<< "  "<<  Z.bshare<<"    ";
-            for(;j<searchArray[i].length();j++){
+            for(;j<word.length();j++){
                 
                 
                 share.xshare = 2000;
 
-                size_t inserted_index =  letterToIndex(searchArray[i][j],j,alphasize,is_optimized);
+                size_t inserted_index =  letterToIndex(word[j],j,alphasize,is_optimized);
 
 
     
-                inserted_index = letterToIndex(searchArray[i][j],j,alphasize,is_optimized);
+                inserted_index = letterToIndex(word[j],j,alphasize,is_optimized);
                 RegXS i_index;
                 i_index.xshare = inserted_index;
                 
@@ -387,9 +395,9 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
 
         //mpc_reconstruct(tio,yield,Z,64);
         if(mpc_reconstruct(tio,yield,Z))
-        std::cout << "\nThe value  " << searchArray[i] << " is present" << std::endl;
+        std::cout << "\nThe value  " << word << " is present" << std::endl;
         else
-        std::cout << "\nthe value " << searchArray[i] << " is not present" << std::endl;
+        std::cout << "\nthe value " << word << " is not present" << std::endl;
        }
 }
 
