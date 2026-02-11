@@ -14,6 +14,8 @@
 
 // Defining this constant for clarity
 const uint64_t BITS_PER_WORD = 64;
+// Runtime switch for optional debug/reconstruction output
+static bool BITTRIE_DEBUG_ENABLED = false;
 
 // Forward declaration so BitTrie(...) can call it
 static void basic_bit(MPCIO &mpcio,
@@ -42,6 +44,7 @@ void BitTrie(unsigned p, MPCIO &mpcio, const PRACOptions &opts, char **args) {
     size_t n_searches = 0;
     int is_optimized = 0;
     int run_sanity = 0;
+    int debug_flag = 0; // default: no verbose reconstruction
 
     for (int i = 0; i < nargs; i += 2) {
         std::string option = args[i];
@@ -51,7 +54,10 @@ void BitTrie(unsigned p, MPCIO &mpcio, const PRACOptions &opts, char **args) {
         else if (option == "-e"   && i + 1 < nargs) n_searches  = std::atoi(args[i + 1]);
         else if (option == "-opt" && i + 1 < nargs) is_optimized= std::atoi(args[i + 1]);
         else if (option == "-s"   && i + 1 < nargs) run_sanity  = std::atoi(args[i + 1]);
+        else if (option == "-debug" && i + 1 < nargs) debug_flag = std::atoi(args[i + 1]);
     }
+
+    BITTRIE_DEBUG_ENABLED = (debug_flag != 0);
 
     run_coroutines(tio, [&tio, alphasize, triedepth, n_inserts, n_searches,
                          is_optimized, run_sanity, player, &mpcio](yield_t &yield) {
@@ -81,11 +87,13 @@ void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsi
     auto BitArray = bit_oram.flat(tio, yield);
 
     // --- DEBUG: Reconstruct the secret bit_position we want to set ---
-    if (player == 0) {
-        value_t public_bit_pos = mpc_reconstruct(tio, yield, bit_position, 32);
-        std::cout << "\n[DEBUG] SETTING bit_position: " << public_bit_pos << std::endl;
-    } else {
-        mpc_reconstruct(tio, yield, bit_position, 32); // P1 must participate
+    if (BITTRIE_DEBUG_ENABLED) {
+        if (player == 0) {
+            value_t public_bit_pos = mpc_reconstruct(tio, yield, bit_position, 32);
+            std::cout << "\n[DEBUG] SETTING bit_position: " << public_bit_pos << std::endl;
+        } else {
+            mpc_reconstruct(tio, yield, bit_position, 32); // P1 must participate
+        }
     }
 
     // --- 1. SECURELY GET THE WORD INDEX ---
@@ -96,14 +104,16 @@ void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsi
     RegXS old_word = BitArray[word_idx];
     
     // --- DEBUG: Reconstruct values to see what's happening ---
-    if (player == 0) {
-        value_t public_word_idx = mpc_reconstruct(tio, yield, word_idx, 32);
-        value_t public_old_word = mpc_reconstruct(tio, yield, old_word, 64);
-        std::cout << "[DEBUG]   Reading from word_idx: " << public_word_idx << std::endl;
-        std::cout << "[DEBUG]   Value of old_word: " << public_old_word << std::endl;
-    } else {
-        mpc_reconstruct(tio, yield, word_idx, 32); // P1 must participate
-        mpc_reconstruct(tio, yield, old_word, 64); // P1 must participate
+    if (BITTRIE_DEBUG_ENABLED) {
+        if (player == 0) {
+            value_t public_word_idx = mpc_reconstruct(tio, yield, word_idx, 32);
+            value_t public_old_word = mpc_reconstruct(tio, yield, old_word, 64);
+            std::cout << "[DEBUG]   Reading from word_idx: " << public_word_idx << std::endl;
+            std::cout << "[DEBUG]   Value of old_word: " << public_old_word << std::endl;
+        } else {
+            mpc_reconstruct(tio, yield, word_idx, 32); // P1 must participate
+            mpc_reconstruct(tio, yield, old_word, 64); // P1 must participate
+        }
     }
 
     // --- 3. HYBRID STEP: Reconstruct ONLY the bit index (0-63) ---
@@ -111,7 +121,7 @@ void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsi
     mpc_and_public(tio, yield, bit_in_word_idx_xs, bit_position, 63, player);
     uint8_t public_bit_idx = mpc_reconstruct(tio, yield, bit_in_word_idx_xs, 6);
     
-    if (player == 0) {
+    if (BITTRIE_DEBUG_ENABLED && player == 0) {
         std::cout << "[DEBUG]   Calculated public_bit_idx (0-63): " << (int)public_bit_idx << std::endl;
     }
 
@@ -124,11 +134,13 @@ void BitTrieClass::set_bit(MPCTIO &tio, yield_t &yield, RegXS bit_position, unsi
     mpc_set_bit(tio, yield, new_word, public_bit_idx, one_bs, player); // Calling the FIXED function // Calling the BROKEN function
 
     // --- DEBUG: Reconstruct the new word to check the result ---
-    if (player == 0) {
-        value_t public_new_word = mpc_reconstruct(tio, yield, new_word, 64);
-        std::cout << "[DEBUG]   Value of new_word after set: " << public_new_word << std::endl;
-    } else {
-        mpc_reconstruct(tio, yield, new_word, 64); // P1 must participate
+    if (BITTRIE_DEBUG_ENABLED) {
+        if (player == 0) {
+            value_t public_new_word = mpc_reconstruct(tio, yield, new_word, 64);
+            std::cout << "[DEBUG]   Value of new_word after set: " << public_new_word << std::endl;
+        } else {
+            mpc_reconstruct(tio, yield, new_word, 64); // P1 must participate
+        }
     }
 
     // --- 5. CRITICAL STEP: WRITE THE MODIFIED WORD BACK ---
@@ -180,6 +192,7 @@ void BitTrieClass::search(MPCTIO &tio, yield_t &yield, RegXS index, RegBS &Z, un
 
 // ---- Debug print helpers (only P0 sees data) ----
 void BitTrieClass::print_bittrie(MPCTIO &tio, yield_t &yield, size_t size) {
+    if (!BITTRIE_DEBUG_ENABLED) return;
     auto BitArray = bit_oram.flat(tio, yield);
     auto R = BitArray.reconstruct();
     if (R.empty()) return; // P1/P2 get empty
@@ -190,6 +203,7 @@ void BitTrieClass::print_bittrie(MPCTIO &tio, yield_t &yield, size_t size) {
 }
 
 void BitTrieClass::print_bittrie_stringcheck(MPCTIO &tio, yield_t &yield, size_t size) {
+    if (!BITTRIE_DEBUG_ENABLED) return;
     auto StringArray = second_oram.flat(tio, yield);
     auto R = StringArray.reconstruct();
     if (R.empty()) return;
@@ -259,7 +273,9 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
     tree.init(tio, yield, size);
 
 #ifdef BITTRIE_VERBOSE
-    tree.print_bittrie(tio, yield, size);
+    if (BITTRIE_DEBUG_ENABLED) {
+        tree.print_bittrie(tio, yield, size);
+    }
     std::cout << "\n===== BitTrie Init Stats =====\n";
 #endif
     tio.sync_lamport();
@@ -298,12 +314,16 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
         End_String[word_idx_eos] = new_word_eos;
 
 
-        std::cout << "\ninserted value is " << insertArray[i] << std::endl;
+        if (BITTRIE_DEBUG_ENABLED) {
+            std::cout << "\ninserted value is " << insertArray[i] << std::endl;
+        }
 #ifdef BITTRIE_VERBOSE
-        tree.print_bittrie(tio, yield, size);
-        std::cout << "\nString presence array \n";
-        tree.print_bittrie_stringcheck(tio, yield, size);
-        std::cout << "\n";
+        if (BITTRIE_DEBUG_ENABLED) {
+            tree.print_bittrie(tio, yield, size);
+            std::cout << "\nString presence array \n";
+            tree.print_bittrie_stringcheck(tio, yield, size);
+            std::cout << "\n";
+        }
 #endif
     }
 
@@ -342,12 +362,14 @@ void basic_bit(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth,
         Z = value;
 
 
-        bool z_final = mpc_reconstruct(tio, yield, Z);
-        if (player == 0) {
-            if (z_final)
-                std::cout << "\nThe value " << searchArray[i] << " is present" << std::endl;
-            else
-                std::cout << "\nThe value " << searchArray[i] << " is not present" << std::endl;
+        if (BITTRIE_DEBUG_ENABLED) {
+            bool z_final = mpc_reconstruct(tio, yield, Z);
+            if (player == 0) {
+                if (z_final)
+                    std::cout << "\nThe value " << searchArray[i] << " is present" << std::endl;
+                else
+                    std::cout << "\nThe value " << searchArray[i] << " is not present" << std::endl;
+            }
         }
     }
 

@@ -1,0 +1,538 @@
+➜  docker git:(temp) ✗ ./run-experiment -o trie -m 8 -d 8 -i 5 -e 5 -opt 0 -s 1 -debug 0 
+===== Running prac -o -- trie -m 8 -d 8 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315285 2026-02-05 23:44:45
+===== P0 output
+19173961
+
+===== Init Stats=====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+376 milliseconds wall clock time
+{380000000;300000000;70000000} nanoseconds {real;user;system}
+Mem: 907044 KiB
+
+===== Insert Stats =====
+1930 messages sent
+110265 message bytes sent
+1895 Lamport clock (latencies)
+7046430510 local AES operations
+47388 milliseconds wall clock time
+{47390000000;88930000000;13690000000} nanoseconds {real;user;system}
+Mem: 3358124 KiB
+
+
+=====  Search Stats =====
+1100 messages sent
+62480 message bytes sent
+1081 Lamport clock (latencies)
+4026531720 local AES operations
+23302 milliseconds wall clock time
+{23300000000;46010000000;7340000000} nanoseconds {real;user;system}
+Mem: 3358124 KiB
+1100 messages sent
+62480 message bytes sent
+1081 Lamport clock (latencies)
+4026531720 local AES operations
+23310 milliseconds wall clock time
+{23310000000;46010000000;7350000000} nanoseconds {real;user;system}
+Mem: 3358124 KiB
+Precomputed values used: T0 a:1 r25:55
+===== P1 output
+19173961
+
+===== Init Stats=====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+377 milliseconds wall clock time
+{380000000;310000000;70000000} nanoseconds {real;user;system}
+Mem: 907104 KiB
+
+===== Insert Stats =====
+1930 messages sent
+110265 message bytes sent
+1895 Lamport clock (latencies)
+7046430510 local AES operations
+47384 milliseconds wall clock time
+{47380000000;88480000000;13780000000} nanoseconds {real;user;system}
+Mem: 3358148 KiB
+
+
+=====  Search Stats =====
+1100 messages sent
+62480 message bytes sent
+1081 Lamport clock (latencies)
+4026531720 local AES operations
+23310 milliseconds wall clock time
+{23310000000;45420000000;7240000000} nanoseconds {real;user;system}
+Mem: 3358216 KiB
+1100 messages sent
+62480 message bytes sent
+1081 Lamport clock (latencies)
+4026531720 local AES operations
+23319 milliseconds wall clock time
+{23320000000;45420000000;7250000000} nanoseconds {real;user;system}
+Mem: 3358216 KiB
+Precomputed values used: T0 a:1 r25:55
+===== P2 output
+19173961
+
+===== Init Stats=====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+129 milliseconds wall clock time
+{130000000;60000000;70000000} nanoseconds {real;user;system}
+Mem: 607668 KiB
+
+===== Insert Stats =====
+140 messages sent
+200690 message bytes sent
+1895 Lamport clock (latencies)
+4218288470 local AES operations
+47779 milliseconds wall clock time
+{47770000000;81470000000;200000000} nanoseconds {real;user;system}
+Mem: 613280 KiB
+
+
+=====  Search Stats =====
+82 messages sent
+114728 message bytes sent
+1079 Lamport clock (latencies)
+1533923080 local AES operations
+23211 milliseconds wall clock time
+{23210000000;29020000000;40000000} nanoseconds {real;user;system}
+Mem: 613280 KiB
+82 messages sent
+114728 message bytes sent
+1079 Lamport clock (latencies)
+1533923080 local AES operations
+23221 milliseconds wall clock time
+{23220000000;29020000000;40000000} nanoseconds {real;user;system}
+Mem: 613280 KiB
+Precomputed values used: T0 r25:55
+===== End 1770315357 2026-02-05 23:45:57
+
+
+
+
+
+➜  docker git:(temp) ✗ ./run-experiment -o trie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0 
+===== Running prac -o -- trie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315866 2026-02-05 23:54:26
+bash: line 1: 36869 Killed                  stdbuf -o 0 ./prac -o -t 8 0 trie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 23575.p0.out 2>&1
+bash: line 1: 10815 Killed                  stdbuf -o 0 ./prac -o -t 8 2 172.17.0.2 172.17.0.3 trie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 23575.p2.out 2>&1
+bash: line 1: 36800 Aborted                 stdbuf -o 0 ./prac -o -t 8 1 172.17.0.2 trie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 23575.p1.out 2>&1
+===== P0 output
+153391689
+===== P1 output
+153391689
+
+===== Init Stats=====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+6853 milliseconds wall clock time
+{6850000000;2520000000;2790000000} nanoseconds {real;user;system}
+Mem: 7195236 KiB
+terminate called after throwing an instance of 'boost::wrapexcept<boost::system::system_error>'
+  what():  read: End of file
+===== P2 output
+153391689
+===== End 1770315873 2026-02-05 23:54:33
+
+
+
+
+
+
+➜  docker git:(temp) ✗ ./run-experiment -o bittrie -m 8 -d 8 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Running prac -o -- bittrie -m 8 -d 8 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315504 2026-02-05 23:48:24
+===== P0 output
+BitTrie size: 19173962 bits in 299594 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+20 milliseconds wall clock time
+{20000000;10000000;0} nanoseconds {real;user;system}
+Mem: 22136 KiB
+
+===== BitTrie Insert Stats =====
+1780 messages sent
+96120 message bytes sent
+1740 Lamport clock (latencies)
+125828880 local AES operations
+4289 milliseconds wall clock time
+{4290000000;1180000000;130000000} nanoseconds {real;user;system}
+Mem: 69392 KiB
+
+===== BitTrie Search Stats =====
+900 messages sent
+47780 message bytes sent
+881 Lamport clock (latencies)
+62914440 local AES operations
+2437 milliseconds wall clock time
+{2440000000;590000000;30000000} nanoseconds {real;user;system}
+Mem: 69392 KiB
+900 messages sent
+47780 message bytes sent
+881 Lamport clock (latencies)
+62914440 local AES operations
+2440 milliseconds wall clock time
+{2440000000;590000000;30000000} nanoseconds {real;user;system}
+Mem: 69392 KiB
+Precomputed values used: T0 a:41 r19:60
+===== P1 output
+BitTrie size: 19173962 bits in 299594 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+19 milliseconds wall clock time
+{20000000;10000000;0} nanoseconds {real;user;system}
+Mem: 22316 KiB
+
+===== BitTrie Insert Stats =====
+1780 messages sent
+96120 message bytes sent
+1740 Lamport clock (latencies)
+125828880 local AES operations
+4290 milliseconds wall clock time
+{4290000000;1190000000;130000000} nanoseconds {real;user;system}
+Mem: 69468 KiB
+
+===== BitTrie Search Stats =====
+900 messages sent
+47780 message bytes sent
+881 Lamport clock (latencies)
+62914440 local AES operations
+2437 milliseconds wall clock time
+{2440000000;580000000;40000000} nanoseconds {real;user;system}
+Mem: 69724 KiB
+900 messages sent
+47780 message bytes sent
+881 Lamport clock (latencies)
+62914440 local AES operations
+2439 milliseconds wall clock time
+{2440000000;580000000;40000000} nanoseconds {real;user;system}
+Mem: 69724 KiB
+Precomputed values used: T0 a:41 r19:60
+===== P2 output
+BitTrie size: 19173962 bits in 299594 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+12 milliseconds wall clock time
+{10000000;0;0} nanoseconds {real;user;system}
+Mem: 17664 KiB
+
+===== BitTrie Insert Stats =====
+200 messages sent
+175120 message bytes sent
+1740 Lamport clock (latencies)
+71918040 local AES operations
+4296 milliseconds wall clock time
+{4300000000;1710000000;60000000} nanoseconds {real;user;system}
+Mem: 22372 KiB
+
+===== BitTrie Search Stats =====
+122 messages sent
+88088 message bytes sent
+877 Lamport clock (latencies)
+23972680 local AES operations
+2430 milliseconds wall clock time
+{2430000000;590000000;20000000} nanoseconds {real;user;system}
+Mem: 22372 KiB
+122 messages sent
+88088 message bytes sent
+877 Lamport clock (latencies)
+23972680 local AES operations
+2432 milliseconds wall clock time
+{2440000000;590000000;20000000} nanoseconds {real;user;system}
+Mem: 22372 KiB
+Precomputed values used: T0 r19:60
+===== End 1770315511 2026-02-05 23:48:31
+
+
+
+
+
+➜  docker git:(temp) ✗ ./run-experiment -o bittrie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Running prac -o -- bittrie -m 8 -d 9 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315578 2026-02-05 23:49:38
+===== P0 output
+BitTrie size: 153391690 bits in 2396746 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+51 milliseconds wall clock time
+{50000000;40000000;10000000} nanoseconds {real;user;system}
+Mem: 120456 KiB
+
+===== BitTrie Insert Stats =====
+2020 messages sent
+110640 message bytes sent
+1980 Lamport clock (latencies)
+1006632720 local AES operations
+8047 milliseconds wall clock time
+{8040000000;11090000000;1150000000} nanoseconds {real;user;system}
+Mem: 495432 KiB
+
+===== BitTrie Search Stats =====
+1020 messages sent
+55040 message bytes sent
+1001 Lamport clock (latencies)
+503316360 local AES operations
+3734 milliseconds wall clock time
+{3730000000;4930000000;500000000} nanoseconds {real;user;system}
+Mem: 495432 KiB
+1020 messages sent
+55040 message bytes sent
+1001 Lamport clock (latencies)
+503316360 local AES operations
+3736 milliseconds wall clock time
+{3730000000;4930000000;510000000} nanoseconds {real;user;system}
+Mem: 495432 KiB
+Precomputed values used: T0 a:41 r22:60
+===== P1 output
+BitTrie size: 153391690 bits in 2396746 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+52 milliseconds wall clock time
+{60000000;40000000;0} nanoseconds {real;user;system}
+Mem: 120144 KiB
+
+===== BitTrie Insert Stats =====
+2020 messages sent
+110640 message bytes sent
+1980 Lamport clock (latencies)
+1006632720 local AES operations
+8043 milliseconds wall clock time
+{8040000000;10950000000;1170000000} nanoseconds {real;user;system}
+Mem: 506968 KiB
+
+===== BitTrie Search Stats =====
+1020 messages sent
+55040 message bytes sent
+1001 Lamport clock (latencies)
+503316360 local AES operations
+3733 milliseconds wall clock time
+{3730000000;4980000000;520000000} nanoseconds {real;user;system}
+Mem: 511632 KiB
+1020 messages sent
+55040 message bytes sent
+1001 Lamport clock (latencies)
+503316360 local AES operations
+3736 milliseconds wall clock time
+{3730000000;4980000000;520000000} nanoseconds {real;user;system}
+Mem: 511632 KiB
+Precomputed values used: T0 a:41 r22:60
+===== P2 output
+BitTrie size: 153391690 bits in 2396746 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+16 milliseconds wall clock time
+{20000000;10000000;0} nanoseconds {real;user;system}
+Mem: 83116 KiB
+
+===== BitTrie Insert Stats =====
+200 messages sent
+202720 message bytes sent
+1980 Lamport clock (latencies)
+575237280 local AES operations
+8102 milliseconds wall clock time
+{8100000000;10530000000;80000000} nanoseconds {real;user;system}
+Mem: 88476 KiB
+
+===== BitTrie Search Stats =====
+122 messages sent
+101888 message bytes sent
+997 Lamport clock (latencies)
+191745760 local AES operations
+3684 milliseconds wall clock time
+{3690000000;3580000000;30000000} nanoseconds {real;user;system}
+Mem: 88476 KiB
+122 messages sent
+101888 message bytes sent
+997 Lamport clock (latencies)
+191745760 local AES operations
+3685 milliseconds wall clock time
+{3690000000;3590000000;30000000} nanoseconds {real;user;system}
+Mem: 88476 KiB
+Precomputed values used: T0 r22:60
+===== End 1770315591 2026-02-05 23:49:51
+
+
+
+
+➜  docker git:(temp) ✗ ./run-experiment -o bittrie -m 8 -d 10 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Running prac -o -- bittrie -m 8 -d 10 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315620 2026-02-05 23:50:20
+===== P0 output
+BitTrie size: 1227133514 bits in 19173962 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+383 milliseconds wall clock time
+{390000000;330000000;50000000} nanoseconds {real;user;system}
+Mem: 906624 KiB
+
+===== BitTrie Insert Stats =====
+2260 messages sent
+126240 message bytes sent
+2220 Lamport clock (latencies)
+8053063440 local AES operations
+58919 milliseconds wall clock time
+{58920000000;104760000000;20810000000} nanoseconds {real;user;system}
+Mem: 3357956 KiB
+
+===== BitTrie Search Stats =====
+1140 messages sent
+62820 message bytes sent
+1121 Lamport clock (latencies)
+4026531720 local AES operations
+27680 milliseconds wall clock time
+{27680000000;50500000000;10990000000} nanoseconds {real;user;system}
+Mem: 3357956 KiB
+1140 messages sent
+62820 message bytes sent
+1121 Lamport clock (latencies)
+4026531720 local AES operations
+27690 milliseconds wall clock time
+{27690000000;50500000000;11000000000} nanoseconds {real;user;system}
+Mem: 3357956 KiB
+Precomputed values used: T0 a:41 r25:60
+===== P1 output
+BitTrie size: 1227133514 bits in 19173962 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+378 milliseconds wall clock time
+{380000000;320000000;40000000} nanoseconds {real;user;system}
+Mem: 906764 KiB
+
+===== BitTrie Insert Stats =====
+2260 messages sent
+126240 message bytes sent
+2220 Lamport clock (latencies)
+8053063440 local AES operations
+58947 milliseconds wall clock time
+{58950000000;103960000000;20940000000} nanoseconds {real;user;system}
+Mem: 3358092 KiB
+
+===== BitTrie Search Stats =====
+1140 messages sent
+62820 message bytes sent
+1121 Lamport clock (latencies)
+4026531720 local AES operations
+27658 milliseconds wall clock time
+{27660000000;49980000000;11230000000} nanoseconds {real;user;system}
+Mem: 3358136 KiB
+1140 messages sent
+62820 message bytes sent
+1121 Lamport clock (latencies)
+4026531720 local AES operations
+27667 milliseconds wall clock time
+{27670000000;49980000000;11230000000} nanoseconds {real;user;system}
+Mem: 3358136 KiB
+Precomputed values used: T0 a:41 r25:60
+===== P2 output
+Connection to p1 refused, will retry.
+BitTrie size: 1227133514 bits in 19173962 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+117 milliseconds wall clock time
+{120000000;80000000;30000000} nanoseconds {real;user;system}
+Mem: 607612 KiB
+
+===== BitTrie Insert Stats =====
+200 messages sent
+230320 message bytes sent
+2220 Lamport clock (latencies)
+4601771880 local AES operations
+59308 milliseconds wall clock time
+{59300000000;93440000000;250000000} nanoseconds {real;user;system}
+Mem: 612960 KiB
+
+===== BitTrie Search Stats =====
+122 messages sent
+115688 message bytes sent
+1117 Lamport clock (latencies)
+1533923960 local AES operations
+27526 milliseconds wall clock time
+{27520000000;31470000000;50000000} nanoseconds {real;user;system}
+Mem: 612960 KiB
+122 messages sent
+115688 message bytes sent
+1117 Lamport clock (latencies)
+1533923960 local AES operations
+27532 milliseconds wall clock time
+{27530000000;31470000000;50000000} nanoseconds {real;user;system}
+Mem: 612960 KiB
+Precomputed values used: T0 r25:60
+===== End 1770315708 2026-02-05 23:51:48
+
+
+
+
+➜  docker git:(temp) ✗ ./run-experiment -o bittrie -m 8 -d 11 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Running prac -o -- bittrie -m 8 -d 11 -i 5 -e 5 -opt 0 -s 1 -debug 0
+===== Start 1770315780 2026-02-05 23:53:00
+bash: line 1: 27537 Killed                  stdbuf -o 0 ./prac -o -t 8 0 bittrie -m 8 -d 11 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 22844.p0.out 2>&1
+bash: line 1: 27468 Killed                  stdbuf -o 0 ./prac -o -t 8 1 172.17.0.2 bittrie -m 8 -d 11 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 22844.p1.out 2>&1
+bash: line 1: 10123 Aborted                 stdbuf -o 0 ./prac -o -t 8 2 172.17.0.2 172.17.0.3 bittrie -m 8 -d 11 -i 5 -e 5 -opt 0 -s 1 -debug 0 > 22844.p2.out 2>&1
+===== P0 output
+BitTrie size: 9817068106 bits in 153391690 words
+===== P1 output
+Connection to p0 refused, will retry.
+BitTrie size: 9817068106 bits in 153391690 words
+===== P2 output
+Connection to p0 refused, will retry.
+BitTrie size: 9817068106 bits in 153391690 words
+
+===== BitTrie Init Stats =====
+0 messages sent
+0 message bytes sent
+0 Lamport clock (latencies)
+0 local AES operations
+6245 milliseconds wall clock time
+{6250000000;1270000000;2500000000} nanoseconds {real;user;system}
+Mem: 4798900 KiB
+terminate called after throwing an instance of 'boost::wrapexcept<boost::system::system_error>'
+  what():  read: End of file
+===== End 1770315788 2026-02-05 23:53:08

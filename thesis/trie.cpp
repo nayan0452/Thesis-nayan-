@@ -7,6 +7,8 @@
 #include "heap.hpp"
 #include "trie.hpp"
 
+// Runtime switch for optional reconstruction / debug output
+static bool TRIE_DEBUG_ENABLED = false;
 
 // void TrieClass::insert(MPCTIO &tio, yield_t &yield, RegXS val, RegXS y,unsigned player) {
 //     auto TrieArray = oram.flat(tio, yield);
@@ -35,13 +37,20 @@
 void TrieClass::insert(MPCTIO &tio, yield_t &yield, RegXS index, RegXS &insert_value, unsigned player) {
     auto TrieArray = oram.flat(tio, yield);
     num_items++;
-    std::cout<< mpc_reconstruct(tio,yield,index,64)<<"  --  " ;
+    if (TRIE_DEBUG_ENABLED) {
+        value_t public_index = mpc_reconstruct(tio, yield, index, 64);
+        if (player == 0) {
+            std::cout<< public_index <<"  --  " ;
+        }
+    }
 
     RegXS b = TrieArray[index];
     //std::cout<<b<<" ";
     
     // Get reconstructed value
-    value_t check = mpc_reconstruct(tio, yield, b, 64);
+    if (TRIE_DEBUG_ENABLED) {
+        mpc_reconstruct(tio, yield, b, 64);
+    }
     //std::cout << check << " "<<b.xshare<<" ";
     // RegXS input;
     // if(check == 0){
@@ -66,15 +75,15 @@ void TrieClass::search(MPCTIO &tio, yield_t & yield, RegXS index,RegBS &Z,unsign
     auto TrieArray = oram.flat(tio, yield);
     RegXS val =  TrieArray[index];
     RegBS bval;
-    if(mpc_reconstruct(tio,yield,val,64)==1){
-        bval.bshare = player;
+    if (TRIE_DEBUG_ENABLED) {
+        value_t public_val = mpc_reconstruct(tio, yield, val, 64);
+        bval.bshare = (public_val == 1) ? player : 0;
+    } else {
+        bval = val.bitat(0); // use secret-shared bit without reconstruction
     }
-    else bval.bshare = 0;
-    //std::cout<<"val reconstruct"<<mpc_reconstruct(tio,yield,val,64);
     RegBS temp;
     mpc_and(tio,yield,temp,bval,Z);
     Z = temp;
-    //std::cout<<"Z share "<<Z.bshare<<" z recobstruct "<<mpc_reconstruct(tio,yield,Z)<<" ";
          
 }
 
@@ -100,6 +109,7 @@ void TrieClass::init(MPCTIO &tio, yield_t &yield, size_t n) {
 }
 
 void TrieClass::print_trie(MPCTIO &tio, yield_t &yield, size_t size){
+    if (!TRIE_DEBUG_ENABLED) return;
     auto HeapArray = oram.flat(tio, yield);
     auto Pjreconstruction = HeapArray.reconstruct();
     for(size_t i = 0 ; i< size ; i++){
@@ -109,6 +119,7 @@ void TrieClass::print_trie(MPCTIO &tio, yield_t &yield, size_t size){
 }
 
 void TrieClass::print_trie_stringcheck(MPCTIO &tio, yield_t &yield, size_t size){
+    if (!TRIE_DEBUG_ENABLED) return;
     auto HeapArray = second_oram.flat(tio, yield);
     auto Pjreconstruction = HeapArray.reconstruct();
     for(size_t i = 0 ; i< size ; i++){
@@ -206,12 +217,14 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
 
             //std::cout<<"  ----- "<< mpc_reconstruct(tio, yield,End_String[share])<<"  ------ ";
 
-            std::cout << "\ninserted value is " << word << std::endl;
-            tree.print_trie(tio, yield,size);
-            std::cout<<"\n";
-            std::cout<<"String presence array \n";
-            tree.print_trie_stringcheck(tio,yield,size);
-            std::cout<<"\n";
+            if (TRIE_DEBUG_ENABLED) {
+                std::cout << "\ninserted value is " << word << std::endl;
+                tree.print_trie(tio, yield,size);
+                std::cout<<"\n";
+                std::cout<<"String presence array \n";
+                tree.print_trie_stringcheck(tio,yield,size);
+                std::cout<<"\n";
+            }
         }        
         
         
@@ -257,31 +270,43 @@ void basic(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, size_t n_
                     share = i_index^share;
                     
                 }
-                std::cout<<mpc_reconstruct(tio,yield,share,64)<<" ";
+                if (TRIE_DEBUG_ENABLED) {
+                    value_t public_share = mpc_reconstruct(tio, yield, share, 64);
+                    if (player == 0) {
+                        std::cout<<public_share<<" ";
+                    } else {
+                        // P1 participates in reconstruction for sync even if not printing
+                    }
+                }
                 tree.search(tio,yield,share,Z,player);
                                
         }
         auto End_String = tree.second_oram.flat(tio, yield);
         RegXS check = End_String[share];
-        RegBS temp;
+        RegBS check_bs;
 
         //std::cout<<"  ----- "<< mpc_reconstruct(tio, yield,check)<<"  ------ ";
         // mpc and between check and Z but we are reconstructing the check value because as of now we dont have mpc_ and
-        if(mpc_reconstruct(tio, yield,check)==1){
-            temp.bshare = player;
-        }
-        else{
-            temp.bshare=0;
+        if (TRIE_DEBUG_ENABLED) {
+            value_t public_check = mpc_reconstruct(tio, yield, check);
+            check_bs.bshare = (public_check == 1) ? player : 0;
+        } else {
+            check_bs = check.bitat(0);
         }
         RegBS value;
-        mpc_and(tio,yield,value,temp,Z);
+        mpc_and(tio,yield,value,check_bs,Z);
         Z = value;
 
         //mpc_reconstruct(tio,yield,Z,64);
-        if(mpc_reconstruct(tio,yield,Z))
-        std::cout << "\nThe value  " << word << " is present" << std::endl;
-        else
-        std::cout << "\nthe value " << word << " is not present" << std::endl;
+        if (TRIE_DEBUG_ENABLED) {
+            bool z_final = mpc_reconstruct(tio, yield, Z);
+            if (player == 0) {
+                if(z_final)
+                    std::cout << "\nThe value  " << word << " is present" << std::endl;
+                else
+                    std::cout << "\nthe value " << word << " is not present" << std::endl;
+            }
+        }
        }
 
     
@@ -338,7 +363,9 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
             auto End_String = trieArray[j-1]->second_oram.flat(tio, yield);
             End_String[share] = check;
 
-            std::cout << "inserted value is " << word << std::endl;
+            if (TRIE_DEBUG_ENABLED && player == 0) {
+                std::cout << "inserted value is " << word << std::endl;
+            }
             
             
         }
@@ -373,31 +400,41 @@ void semi_optimized(MPCIO &mpcio, yield_t &yield, int alphasize, int triedepth, 
                     share = i_index^share;
                     
                 }
-                std::cout<<mpc_reconstruct(tio,yield,share,64)<<" ";
+                if (TRIE_DEBUG_ENABLED) {
+                    value_t public_share = mpc_reconstruct(tio, yield, share, 64);
+                    if (player == 0) {
+                        std::cout<<public_share<<" ";
+                    }
+                }
                 trieArray[j]->search(tio,yield,share,Z,player);
                                
         }
         auto End_String = trieArray[j-1]->second_oram.flat(tio, yield);
         RegXS check = End_String[share];
-        RegBS temp;
+        RegBS check_bs;
 
         //std::cout<<"  ----- "<< mpc_reconstruct(tio, yield,check)<<"  ------ ";
         // mpc and between check and Z but we are reconstructing the check value because as of now we dont have mpc_ and
-        if(mpc_reconstruct(tio, yield,check)==1){
-            temp.bshare = player;
-        }
-        else{
-            temp.bshare=0;
+        if (TRIE_DEBUG_ENABLED) {
+            value_t public_check = mpc_reconstruct(tio, yield, check);
+            check_bs.bshare = (public_check == 1) ? player : 0;
+        } else {
+            check_bs = check.bitat(0);
         }
         RegBS value;
-        mpc_and(tio,yield,value,temp,Z);
+        mpc_and(tio,yield,value,check_bs,Z);
         Z = value;
 
         //mpc_reconstruct(tio,yield,Z,64);
-        if(mpc_reconstruct(tio,yield,Z))
-        std::cout << "\nThe value  " << word << " is present" << std::endl;
-        else
-        std::cout << "\nthe value " << word << " is not present" << std::endl;
+        if (TRIE_DEBUG_ENABLED) {
+            bool z_final = mpc_reconstruct(tio, yield, Z);
+            if (player == 0) {
+                if(z_final)
+                    std::cout << "\nThe value  " << word << " is present" << std::endl;
+                else
+                    std::cout << "\nthe value " << word << " is not present" << std::endl;
+            }
+        }
        }
 }
 
@@ -418,6 +455,7 @@ void Trie(unsigned p,MPCIO & mpcio,  const PRACOptions & opts, char ** args) {
     size_t n_searches = 0;
     int is_optimized = 0;
     int run_sanity = 0;
+    int debug_flag = 0;
 
     for (int i = 0; i < nargs; i += 2) {
         std::string option = args[i];
@@ -433,8 +471,12 @@ void Trie(unsigned p,MPCIO & mpcio,  const PRACOptions & opts, char ** args) {
             is_optimized = std::atoi(args[i + 1]);
         } else if (option == "-s" && i + 1 < nargs) {
             run_sanity = std::atoi(args[i + 1]);
+        } else if (option == "-debug" && i + 1 < nargs) {
+            debug_flag = std::atoi(args[i + 1]);
         }
     }
+
+    TRIE_DEBUG_ENABLED = (debug_flag != 0);
 
     run_coroutines(tio, [ & tio, alphasize, triedepth, n_inserts, n_searches, is_optimized, run_sanity,player, &mpcio](yield_t & yield) {
         
