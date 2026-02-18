@@ -4,7 +4,7 @@ Old thesis code https://github.com/Lokesh-Valeti/thesis
 
 
 Summary
-You've successfully run the PRAC (Private Random Access Computations) project on your Windows system using Docker. Here's what we accomplished:
+We've successfully run the PRAC (Private Random Access Computations) project on your Windows system using Docker. Here's what we accomplished:
 Setup:
 Installed Docker Desktop on Windows
 Built the PRAC Docker image
@@ -100,5 +100,5 @@ ZKProof Workshop recordings
 Simons Institute cryptography workshops
 Start with the basics of secure computation and secret sharing before diving into the more complex topics like ORAM and DPFs. The concepts build on each other, so a solid foundation will make the advanced material more accessible.
 Many of these lectures can be found on YouTube, Coursera, or university websites. The "Applied Cryptography" course by Dan Boneh on Coursera is particularly good for beginners.
-Would you like me to recommend specific videos for any of these topics?.
+
 
